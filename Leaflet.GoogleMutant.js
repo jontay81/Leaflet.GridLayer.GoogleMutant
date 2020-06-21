@@ -4,7 +4,7 @@
 
 // 🍂class GridLayer.GoogleMutant
 // 🍂extends GridLayer
-L.GridLayer.GoogleMutant = L.GridLayer.extend({
+export var GoogleMutant  = L.GridLayer.GoogleMutant = L.GridLayer.extend({
 	options: {
 		minZoom: 0,
 		maxZoom: 23,
@@ -438,14 +438,6 @@ L.GridLayer.GoogleMutant = L.GridLayer.extend({
 
 		this._mutant.setCenter(_center);
 		this._mutant.setZoom(Math.round(this._map.getZoom()));
-		const gZoom = this._mutant.getZoom();
-
-		for (let key of Object.keys(this._freshTiles)) {
-			const tileZoom = key.split(':')[2];
-			if (gZoom != tileZoom) {
-				delete this._freshTiles[key]; 
-			}
-		}
 	},
 
 	// Agressively prune _freshtiles when a tile with the same key is removed,
@@ -462,30 +454,21 @@ L.GridLayer.GoogleMutant = L.GridLayer.extend({
 		return L.GridLayer.prototype._removeTile.call(this, key);
 	},
 
-	_getLargeGMapBound: function (googleBounds) {
-		const sw = googleBounds.getSouthWest();
-		const ne = googleBounds.getNorthEast();
-		const swLat = sw.lat();
-		const swLng = sw.lng();
-		const neLat = ne.lat();
-		const neLng = ne.lng();
-		const latDelta = Math.abs(neLat - swLat);
-		const lngDelta = Math.abs(neLng - swLng);
-		return L.latLngBounds([[swLat - latDelta, swLng - lngDelta], [neLat + latDelta, neLng + lngDelta]]);
-	},
-
 	_pruneTile: function (key) {
 		var gZoom = this._mutant.getZoom();
 		var tileZoom = key.split(':')[2];
-		const googleBounds = this._mutant.getBounds();
-		const gMapBounds = this._getLargeGMapBound(googleBounds);
+		var googleBounds = this._mutant.getBounds();
+		var sw = googleBounds.getSouthWest();
+		var ne = googleBounds.getNorthEast();
+		var gMapBounds = L.latLngBounds([[sw.lat(), sw.lng()], [ne.lat(), ne.lng()]]);
+
 		for (var i=0; i<this._imagesPerTile; i++) {
 			var key2 = key + '/' + i;
 			if (key2 in this._freshTiles) { 
 				var tileBounds = this._map && this._keyToBounds(key);
 				var stillVisible = this._map && tileBounds.overlaps(gMapBounds) && (tileZoom == gZoom);
 
-				if (!stillVisible) delete this._freshTiles[key2];
+				if (!stillVisible) delete this._freshTiles[key2]; 
 //				console.log('Prunning of ', key, (!stillVisible))
 			}
 		}
@@ -496,5 +479,5 @@ L.GridLayer.GoogleMutant = L.GridLayer.extend({
 // 🍂factory gridLayer.googleMutant(options)
 // Returns a new `GridLayer.GoogleMutant` given its options
 L.gridLayer.googleMutant = function (options) {
-	return new L.GridLayer.GoogleMutant(options);
+	return new GoogleMutant(options);
 };
